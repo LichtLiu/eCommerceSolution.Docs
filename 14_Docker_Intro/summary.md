@@ -65,11 +65,49 @@ Docker Image(範本)
 | 作業系統 | 每台有自己的 Guest OS | **沒有**自己的 OS,用主機 OS 的 kernel |
 | 資源 | 預先配給 CPU / RAM / 硬碟 | 不預先配給,直接用主機資源 |
 | 主機角度 | 很重的 process(整台電腦) | 普通 process |
+| 跑在 | Hypervisor 軟體上 | 容器化引擎(Docker daemon)上 |
 | 體積 | 大(GB 級) | 輕量(約 100~200MB 等級,視內容) |
-| 隔離 | 有 | 有 |
-| 擴展 | 貴 | 影響小 |
+| 啟動 / 執行速度 | 慢 | **更快** |
+| 隔離 | 有 | 有(差別在啟動時間、體積、硬體資源用量) |
+| 擴展 | 貴 | 同一台主機輕鬆開多個實例,影響小 |
+
+> **什麼時候選哪個**
+> - 同一台硬體要跑**多種不同的作業系統** → VM
+> - 應用程式隔離、部署簡單、啟動快 → Container
+> - 兩者可以**合用**:在 VM 裡跑一個或多個 Docker 容器,多台 VM 跑在同一台主機上,兩邊的好處都拿到
 
 > 補充(我的知識,未驗證):Mac 上的 Docker Desktop 是先開一台輕量 Linux VM,容器共用那台 Linux 的 kernel。所以 MySQL 容器內是 Linux,表名區分大小寫(`Products` vs `products`)。
+
+### Image 與 Container 內部:分層檔案系統
+
+```
+Dockerfile(腳本)  →  Docker Engine 執行  →  Image(最終結果)
+```
+
+| 指令 | 作用 |
+|---|---|
+| `FROM` | 指定**基底 Image**(含特定 OS 版本的必要元件,有些預裝 .NET 等 SDK / Runtime) |
+| `COPY` | 複製檔案進 Image |
+| `RUN` | 建置時執行指令(例如 `dotnet publish`) |
+
+> 基底 Image 與 Linux 的 Kernel / Userland(`FROM` 怎麼讀、Alpine vs Ubuntu、怎麼查有哪些 Image)見 [Base Image and Linux Userland.md](<Base Image and Linux Userland.md>)。
+
+> **每道指令都會在前一層上疊一個新的 layer**
+> ```
+> ┌ layer 3:dotnet publish 的編譯結果
+> ├ layer 2:COPY 進來的原始碼
+> └ layer 1:基底 Image(OS + .NET)
+> ```
+
+> **Image 唯讀(immutable)、Container 有自己的可寫層**
+> 同一個 Image 的多個 Container 共用唯讀的 Image;執行期的變動(log、上傳檔)存在各自的 writable layer(同樣分層)。
+> ```
+> Container 1 ─┐ 可寫層(各自獨立)
+> Container 2 ─┤ 可寫層
+>              └→ 共用唯讀的 Image(layer 1~3)
+> ```
+
+> 補充(我的理解,未驗證):老師說變動存在 Container 的 memory,是口語簡化;可寫層應是存在磁碟上,**隨容器一起刪除**。這解釋了為什麼 `docker rm` 後資料會不見,以及為什麼資料庫要掛 Volume(Volume 獨立於可寫層之外)。
 
 ### 六大好處
 | 好處 | 說明 |
@@ -125,4 +163,4 @@ MySQL Container    ← 資料在它掛的 Volume(/var/lib/mysql)
 4. 列出 Products 服務在「別人的機器」上要跑起來需要的所有東西(SDK、MySQL、連線字串、`dotnet ef`…),當作 Dockerfile / compose 的清單
 
 ## 6. 下一步
-下一堂:VM 與容器的架構比較 → Docker Image 實作 → 安裝 → Port mapping → Volumes → 把 UserService、Products Docker 化(Dockerfile + docker-compose)。
+已上完:VM vs Container 的技術差異、Image 與 Container 內部(分層檔案系統)。下一堂:Docker Image 實作(寫 Dockerfile) → 安裝 → Port mapping → Volumes → 把 UserService、Products Docker 化(Dockerfile + docker-compose)。
