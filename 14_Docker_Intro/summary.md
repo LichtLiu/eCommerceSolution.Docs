@@ -109,6 +109,84 @@ Dockerfile(腳本)  →  Docker Engine 執行  →  Image(最終結果)
 
 > 補充(我的理解,未驗證):老師說變動存在 Container 的 memory,是口語簡化;可寫層應是存在磁碟上,**隨容器一起刪除**。這解釋了為什麼 `docker rm` 後資料會不見,以及為什麼資料庫要掛 Volume(Volume 獨立於可寫層之外)。
 
+### Docker Hub:分享 Image
+
+> **問題**:Image 做好了,怎麼分享給同事?不想手動傳檔案。
+> **解法**:**Docker Hub** = Docker Image 的倉庫(registry)。先上傳,別人再下載。
+
+| 特色 | 說明 |
+|---|---|
+| 類似 GitHub | 有 **private / public** 兩種可見度 |
+| Private | 只有被授權的使用者能存取 |
+| Public | 所有人都能看到、下載,類似公開的 NuGet 套件 |
+
+```
+你:docker build → docker push ──→ Docker Hub ──→ 同事:docker pull → docker run
+```
+
+| 指令 | 作用 |
+|---|---|
+| `docker build` | 依 Dockerfile 建立 Image |
+| `docker push` | 上傳 Image 到 Docker Hub |
+| `docker pull` | 從 Docker Hub 下載 Image |
+| `docker run` | 用 Image 建立並執行 Container |
+
+> Image 裡的 `appsettings.json` 會把連線字串一起打包,祕密怎麼處理見 [Do not bake secrets into the Image.md](<Do not bake secrets into the Image.md>)。
+
+> 補充(我的知識,未逐一驗證):`docker run mysql:8` 在本機找不到 Image 時會自動先 pull(預設從 Docker Hub)。registry 不只一個:.NET 的基底 Image 在 Microsoft 自己的 registry(`mcr.microsoft.com`),不是 Docker Hub。
+
+### Docker 架構(面試常問)
+
+```
+Docker Client ──(REST API)──→ Docker Daemon(在 Docker Host 上) ──→ 管理 Image / Container / Volume / Network
+                                    ↑ ↓ push / pull
+                               Docker Registry(Docker Hub)
+```
+
+| 角色 | 是什麼 |
+|---|---|
+| **Docker Host** | 執行 Docker Engine 的那台機器 |
+| **Docker Daemon**(Docker Engine) | 背景程式,**真正做事**:管理 Image、Container、Volume、Network |
+| **Docker Client** | 命令列介面(CLI),下 `docker ...` 指令的地方 |
+| **Docker Registry** | 存放 Image 的雲端倉庫,例如 Docker Hub |
+
+> 指令流程:在 Client 下指令 → **Docker REST API** 接收 → 轉給 **Daemon** 執行。
+
+| 指令 | 誰做什麼 |
+|---|---|
+| `docker build` | Client 叫 Daemon 執行 Dockerfile 產生 Image,預設存在同一台 Host |
+| `docker push` | (選用)上傳 Image 到 Docker Hub |
+| `docker pull` | 從 Docker Hub 下載 Image 到目前的 Host |
+| `docker run` | Daemon 依既有 Image 建立並執行 Container;Image 可能是本機 build 或 pull 來的 |
+
+- Docker Hub 方案(老師說):private image 需付費訂閱,public image 免費帳號就夠。(我無法驗證目前方案,以官方為準。)
+- Volume、Network 較進階,老師說通常由 DevOps 團隊處理。
+- 我的環境:`docker info` 能回應 = Client 連得上 Daemon;Daemon 跑在 Docker Desktop 背後的 Linux VM,所以我的「Docker Host」其實是那台 VM(我的理解,Docker Desktop 的實作細節沒驗證)。
+
+### 問:輸入 `docker run mysql:8`,依序經過哪些角色?
+
+> **我的答案**:Client 輸入 → REST API → Daemon → 管理 Image / Container / Volume / Network,沒在本機找到 `mysql:8` 就去 Registry pull。
+
+**補充與修正**:順序正確。「管理 Image / Container / Volume / Network」是 **Daemon 的職責清單**,不是流程中的一個步驟;而且 **pull 是 Daemon 去做的,不是 Client**。
+
+```
+① Client     輸入 docker run mysql:8
+② REST API   接收 Client 送出的指令
+③ Daemon     收到指令,先在本機找 mysql:8 這個 Image
+④ Daemon     找不到 → 向 Registry(Docker Hub)要求 pull mysql:8
+⑤ Registry   回傳 Image,存到本機(Docker Host)
+⑥ Daemon     依這個 Image 建立 Container 並啟動
+⑦ Client     把 Container 的輸出顯示出來
+```
+
+> **一句話版**:Client 把 `docker run` 透過 REST API 送給 Daemon。Daemon 先在本機找 Image,找不到就向 Docker Hub pull,然後建立並啟動 Container。
+
+- `docker run` = pull(需要時)+ create + start;本機已有 Image 就跳過 ④⑤。(我的知識,未逐一驗證)
+- 之後 `docker start` 重啟容器不會再 pull,因為 Image 已經在本機。
+- Client 與 Daemon 靠 REST API 溝通,所以 Client 可以遠端操作別台的 Daemon。(我的知識,未驗證)
+
+> **面試怎麼答「Docker 架構」**:Docker 是 client-server 架構。Client(CLI)把指令透過 REST API 送給 Daemon,Daemon 在 Host 上管理 Image、Container、Volume、Network,並和 Registry(如 Docker Hub)push / pull Image。
+
 ### 六大好處
 | 好處 | 說明 |
 |---|---|
@@ -163,4 +241,4 @@ MySQL Container    ← 資料在它掛的 Volume(/var/lib/mysql)
 4. 列出 Products 服務在「別人的機器」上要跑起來需要的所有東西(SDK、MySQL、連線字串、`dotnet ef`…),當作 Dockerfile / compose 的清單
 
 ## 6. 下一步
-已上完:VM vs Container 的技術差異、Image 與 Container 內部(分層檔案系統)。下一堂:Docker Image 實作(寫 Dockerfile) → 安裝 → Port mapping → Volumes → 把 UserService、Products Docker 化(Dockerfile + docker-compose)。
+已上完:VM vs Container 的技術差異、Image 與 Container 內部(分層檔案系統)、Docker Hub、Docker 架構。下一堂:安裝 Docker(老師用 Windows,我是 Mac,已安裝 Docker Desktop),之後 Image 實作(寫 Dockerfile) → 安裝 → Port mapping → Volumes → 把 UserService、Products Docker 化(Dockerfile + docker-compose)。

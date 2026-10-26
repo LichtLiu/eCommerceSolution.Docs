@@ -26,6 +26,7 @@
 - [Singleton vs Scoped vs Transient](<4_15_Create User Repository in Core and Infra/Difference between Singleton and Scoped.md>)
 - [為什麼 API 同時參照 Core 與 Infrastructure](<3_14_Create User Model in Core/Why API references Core and Infrastructure.md>)
 - [基底 Image 與 Linux 的 Kernel / Userland](<14_Docker_Intro/Base Image and Linux Userland.md>)
+- [祕密不要打包進 Image](<14_Docker_Intro/Do not bake secrets into the Image.md>)
 
 ## 架構速查
 
