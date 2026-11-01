@@ -33,7 +33,7 @@ layer:publish 的編譯結果
 
 ## 連回我的專案
 
-- Products repo 的 `appsettings.json` 有 `Password=mysql123`,已在公開的 GitHub 上。本機測試密碼,風險小,但 Docker 化時要改掉這個習慣。
+- Products repo 的 `appsettings.json` 有 `Password=<測試密碼>`,已在公開的 GitHub 上。本機測試密碼,風險小,但 Docker 化時要改掉這個習慣。
 - UserService 的 `appsettings.json` 也有 PostgreSQL 連線字串,同樣處理。
 
 ## 問題:`DefaultConnection` 刪掉後,本機 `dotnet run` 會怎樣?

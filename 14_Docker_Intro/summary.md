@@ -199,6 +199,58 @@ Docker Client ──(REST API)──→ Docker Daemon(在 Docker Host 上) ─�
 
 老師提醒:要遵守最佳實務,注意安全與主機資源。
 
+### 安裝 Docker(老師示範 Windows,我是 Mac)
+
+| # | 老師(Windows)的步驟 |
+|---|---|
+| 1 | 終端機輸入 `docker`,顯示「not recognized」= 還沒安裝 |
+| 2 | 到 docker.com 下載 **Docker Desktop**;帳號選用,**上傳 Image 到 Docker Hub 才需要** |
+| 3 | 執行 installer,勾選 **Use WSL**,安裝完**重新開機** |
+| 4 | 接受條款(老師說教育、練習、小型企業免費) → 建議設定 → 可 Sign in later |
+| 5 | 左下角 **Engine is running** = 成功 |
+
+| 概念 | 說明 |
+|---|---|
+| WSL | Windows 內建的輕量 Linux(Win 10 以後預設有);Windows 預設只能跑 Windows 容器,要跑 Linux 容器靠 WSL;不再需要 Hyper-V |
+| Engine 沒啟動 | 檢查 BIOS 虛擬化:Intel 開 **VT-x**,AMD 開 **SVM** |
+| GUI vs 指令 | GUI 可看容器 / Image / Volume,但老師建議用**指令列**,控制更完整 |
+| 常用指令 | `docker run`、`docker ps`、`docker build`、`docker pull`、`docker push`(需帳號)、`docker version` |
+| 版本 | 老師用 24.0.7,建議同版以避免差異 |
+
+**我的 Mac**:已安裝 Docker Desktop,不需要安裝步驟。實際查到(唯讀指令):
+
+| 項目 | 結果 |
+|---|---|
+| Docker 版本 | Client / Server 都是 `20.10.6`,比老師的 24.0.7 舊 |
+| Compose | `docker compose` 為 `2.0.0-beta.1`;`docker-compose` 為 `1.29.1` |
+| 容器 | `products-mysql`(mysql:8)、`ecommerce-postgres`(postgres:17) |
+
+> 版本差異是否影響後面的指令,我沒驗證。先照課程做,遇到錯誤再判斷是不是版本造成。升級會動到 Docker Desktop,升級前要確認兩個資料庫容器的 volume 都在。講到 docker-compose 時要特別留意版本。
+
+### 面試:Docker 是什麼?
+
+> **30 秒回答**:「Docker 是一個**容器化工具**。它把應用程式和它需要的相依(執行環境、函式庫、設定)一起打包成 **Image**,再由 Image 建立 **Container** 執行。容器共用主機的 kernel,不像虛擬機器要帶完整作業系統,所以**更輕量、啟動更快**,而且每個容器彼此隔離。最大的好處是**環境一致**:開發、測試、正式環境跑的是同一個 Image,解決『在我電腦上可以跑』的問題。」
+
+| 層次 | 回答內容 |
+|---|---|
+| 是什麼 | 容器化工具:把程式與相依打包成 Image,由 Image 建立 Container 執行 |
+| 為什麼需要 | 傳統交付要靠文件手動安裝環境,版本與設定不一致就出錯(「在我電腦上可以跑」) |
+| 怎麼做到 | Dockerfile → `docker build` 產生 Image → `docker run` 建立 Container;Image 可 push / pull 到 Docker Hub 分享 |
+| 好處 | 隔離、可攜、一致、易擴展、部署簡單、可用 tag 管版本 |
+
+常被追問:
+
+| 追問 | 一句話 |
+|---|---|
+| Docker 和 VM 的差別? | VM 每台帶完整 Guest OS、資源預先配給;容器沒有自己的 OS,共用主機 kernel,不預先配給資源,更輕更快 |
+| Image 和 Container 的差別? | Image 是唯讀的範本;Container 是 Image 的實例,有自己的可寫層,可以建立多個 |
+| Docker 的架構? | Client 透過 REST API 把指令送給 Daemon,Daemon 在 Host 上管理 Image / Container / Volume / Network,並和 Registry(Docker Hub)push / pull |
+| 容器刪掉,資料會不見嗎? | 寫在容器可寫層的會跟著消失;要保留需要掛 Volume |
+| 容器共用主機 kernel,為什麼 Mac 上還能跑 Linux 容器? | 大部分 Image 需要 Linux kernel,Mac 的 kernel 不是 Linux,所以 Docker Desktop 在背後跑一台輕量 Linux VM,Daemon 與容器都跑在裡面,**共用的是這台 VM 的 kernel**,不是 macOS 的(VM 與容器合用的實例) |
+| 為什麼適合微服務? | 每個服務各自打包、各自隔離、各自擴展,環境一致(我的補充,不是老師的原話) |
+
+> 以上內容整理自這幾堂的課程;「適合微服務」那條是我的補充。回答時用自己的話講,不要背稿,被問到沒做過的部分就說「原則是這樣,實作我會看實際情況」。
+
 ## 4. 關鍵概念
 
 > **Image 含 .NET 執行環境**
@@ -241,4 +293,4 @@ MySQL Container    ← 資料在它掛的 Volume(/var/lib/mysql)
 4. 列出 Products 服務在「別人的機器」上要跑起來需要的所有東西(SDK、MySQL、連線字串、`dotnet ef`…),當作 Dockerfile / compose 的清單
 
 ## 6. 下一步
-已上完:VM vs Container 的技術差異、Image 與 Container 內部(分層檔案系統)、Docker Hub、Docker 架構。下一堂:安裝 Docker(老師用 Windows,我是 Mac,已安裝 Docker Desktop),之後 Image 實作(寫 Dockerfile) → 安裝 → Port mapping → Volumes → 把 UserService、Products Docker 化(Dockerfile + docker-compose)。
+已上完:VM vs Container 的技術差異、Image 與 Container 內部(分層檔案系統)、Docker Hub、Docker 架構、安裝 Docker。下一堂:Dockerfile,之後 Image 實作 → 安裝 → Port mapping → Volumes → 把 UserService、Products Docker 化(Dockerfile + docker-compose)。

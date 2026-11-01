@@ -20,7 +20,10 @@
 | [12](<12_Products_DAL/summary.md>) | Products:DAL | MySQL、Repository、Migration |
 | [13](<13_Products_BLL_API/summary.md>) | Products:BLL + API | DTO、Service、Validator、Minimal API、Swagger、CORS |
 | [13b](<13b_Angular_Products_Integration/summary.md>) | Angular 接兩個服務 | 前後端契約、憑證、Angular 一次請求怎麼走 |
-| [14](<14_Docker_Intro/summary.md>) | Docker 介紹 | 為什麼需要、VM vs Container、Volume |
+| [14](<14_Docker_Intro/summary.md>) | Docker 介紹 | 為什麼需要、VM vs Container、Volume、Docker Hub、架構、安裝 |
+| [15](<15_Dockerfile/summary.md>) | Dockerfile | 指令表、多階段建置(build 用 SDK、成品只留發佈檔)、Port 映射問答 |
+| [16](<16_Docker_Build_Run/summary.md>) | `docker build` / `docker run` | `-t`、`-f`、context、`-p`;容器裡連不到資料庫、快取、IP、`stop` vs `rm` |
+| [17](<17_Docker_Hub_Repository/summary.md>) | Docker Hub 帳號與 Repository | repository / tag、`docker login`;推公開 Image 前先處理密碼 |
 
 觀念比較(獨立檔案):
 - [Singleton vs Scoped vs Transient](<4_15_Create User Repository in Core and Infra/Difference between Singleton and Scoped.md>)
